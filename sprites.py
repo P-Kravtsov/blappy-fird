@@ -5,7 +5,7 @@ from settings import *
 class Bird(pygame.sprite.Sprite):
     """
     Represents the player's bird.
-    Handles image loading, rect creation, gravity, and jumping.
+    Handles image loading, rect creation, gravity, jumping, animation, and rotation.
     """
     def __init__(self, x, y):
         super().__init__()
@@ -13,23 +13,48 @@ class Bird(pygame.sprite.Sprite):
             pygame.transform.scale2x(pygame.image.load(path).convert_alpha())
             for path in ASSETS['bird']
         ]
-        self.image = self.images[0]
+        # Animation state
+        self.index = 0
+        self.animation_counter = 0
+        self.animation_cooldown = 5 # Controls how fast the wings flap
+
+        self.image = self.images[self.index]
         self.rect = self.image.get_rect(center=(x, y))
 
         # Physics and sound
         self.velocity = 0
         self.jump_sound = pygame.mixer.Sound(ASSETS['sounds']['jump'])
 
-    def update(self):
-        # Apply gravity
-        self.velocity += GRAVITY
-        # A simple terminal velocity to prevent falling too fast
-        if self.velocity > 8:
-            self.velocity = 8
-        # Move the bird, but not past the placeholder floor
-        if self.rect.bottom < 768:
-            self.rect.y += int(self.velocity)
+    def update(self, game_active):
+        # First animate the bird
+        self._animate()
+        # Then apply physics and rotation only if the game is active
+        if game_active:
+            self._apply_gravity()
+            self._rotate()
 
     def jump(self):
         self.velocity = JUMP_STRENGTH
         self.jump_sound.play()
+
+    def _apply_gravity(self):
+        """Applies gravity to the bird."""
+        self.velocity += GRAVITY
+        if self.velocity > 8: # Terminal velocity
+            self.velocity = 8
+        if self.rect.bottom < 768: # Placeholder floor
+            self.rect.y += int(self.velocity)
+
+    def _rotate(self):
+        """Rotates the bird image based on its vertical velocity."""
+        # We create a new rotated image to avoid quality loss
+        self.image = pygame.transform.rotozoom(self.images[self.index], -self.velocity * 3, 1)
+
+    def _animate(self):
+        """Cycles through the bird images to create a flapping animation."""
+        self.animation_counter += 1
+        if self.animation_counter > self.animation_cooldown:
+            self.animation_counter = 0
+            self.index = (self.index + 1) % len(self.images)
+            self.image = self.images[self.index]
+

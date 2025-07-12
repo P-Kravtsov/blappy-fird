@@ -12,7 +12,7 @@ pygame.display.set_caption('Blappy Fird')
 clock = pygame.time.Clock()
 
 # --- Game State Variables ---
-# For now, the game starts active and we can control the bird
+# For now, the game starts active + we can control the bird
 game_active = True
 
 # --- Asset Loading ---
@@ -38,7 +38,8 @@ while True:
 
     # Update and draw the bird if the game is active
     if game_active:
-        bird.update()
+        # Pass the game_active state to the bird's update method
+        bird.update(game_active)
         bird.draw(screen)
 
     pygame.display.update()
