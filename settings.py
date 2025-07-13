@@ -10,6 +10,9 @@ PIPE_GAP = 300
 PIPE_FREQUENCY = 1500 # milliseconds
 
 # --- Asset Paths & Configs ---
+FONT_PATH = 'assets/04B_19.TTF'
+
+
 # A dictionary for our assets to make life easier
 ASSETS = {
     'bird': [
@@ -19,6 +22,9 @@ ASSETS = {
     ],
     'sounds': {
         'jump': 'assets/wing.wav',
-        'hit': 'assets/hit.wav', # Add hit sound
+        'hit': 'assets/hit.wav',
+        'score': 'assets/point.wav', # Add score sound
     }
 }
+
+
