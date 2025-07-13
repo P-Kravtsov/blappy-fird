@@ -19,7 +19,6 @@ ASSETS = {
     ],
     'sounds': {
         'jump': 'assets/wing.wav',
+        'hit': 'assets/hit.wav', # Add hit sound
     }
 }
-
-
