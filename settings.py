@@ -11,7 +11,7 @@ PIPE_FREQUENCY = 1500 # milliseconds
 
 # --- Asset Paths & Configs ---
 FONT_PATH = 'assets/04B_19.TTF'
-
+HIGHSCORE_FILE = 'highscore.txt'
 
 # A dictionary for our assets to make life easier
 ASSETS = {
@@ -23,7 +23,7 @@ ASSETS = {
     'sounds': {
         'jump': 'assets/wing.wav',
         'hit': 'assets/hit.wav',
-        'score': 'assets/point.wav', # Add score sound
+        'score': 'assets/point.wav',
     }
 }
 

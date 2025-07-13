@@ -27,11 +27,38 @@ def reset_game():
     return True, 0  # Return game_active status and reset score
 
 
-def score_display():
-    """Displays the current score on the screen."""
-    score_surface = game_font.render(str(score), True, (255, 255, 255))
-    score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
-    screen.blit(score_surface, score_rect)
+def load_high_score():
+    """Loads the high score from a file."""
+    try:
+        with open(HIGHSCORE_FILE, 'r') as f:
+            return int(f.read())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def update_score(current_score, high_score_val):
+    """Updates the high score if the current score is higher."""
+    if current_score > high_score_val:
+        high_score_val = current_score
+        with open(HIGHSCORE_FILE, 'w') as f:
+            f.write(str(high_score_val))
+    return high_score_val
+
+
+def score_display(game_state):
+    """Displays the current score or the final score and high score."""
+    if game_state == 'main_game':
+        score_surface = game_font.render(str(score), True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
+        screen.blit(score_surface, score_rect)
+    if game_state == 'game_over':
+        score_surface = game_font.render(f'Score: {score}', True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
+        screen.blit(score_surface, score_rect)
+
+        high_score_surface = game_font.render(f'High score: {high_score}', True, (255, 255, 255))
+        high_score_rect = high_score_surface.get_rect(center=(SCREEN_WIDTH / 2, 200))
+        screen.blit(high_score_surface, high_score_rect)
 
 
 # --- Initialization ---
@@ -45,12 +72,13 @@ game_font = pygame.font.Font(FONT_PATH, 70)
 # --- Game State Variables ---
 game_active = True
 score = 0
+high_score = load_high_score()
 
 # --- Asset Loading ---
 bg_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 bg_surface.fill((40, 40, 60))
 death_sound = pygame.mixer.Sound(ASSETS['sounds']['hit'])
-score_sound = pygame.mixer.Sound(ASSETS['sounds']['score'])  # Load sound
+score_sound = pygame.mixer.Sound(ASSETS['sounds']['score'])
 
 # --- Sprites ---
 bird = pygame.sprite.GroupSingle(Bird(100, SCREEN_HEIGHT / 2))
@@ -93,20 +121,18 @@ while True:
 
         # Scoring logic
         if pipe_group:
-            # Check the first pipe in the group
             first_pipe = pipe_group.sprites()[0]
             if not first_pipe.passed and first_pipe.rect.centerx < bird.sprite.rect.centerx:
                 score += 1
                 score_sound.play()
-                # Mark both top and bottom pipes as passed
                 for p in pipe_group.sprites():
                     if p.rect.centerx == first_pipe.rect.centerx:
                         p.passed = True
 
-        score_display()
-
+        score_display('main_game')
     else:
-        # If game is not active, just draw the bird and pipes in their last position
+        high_score = update_score(score, high_score)
+        score_display('game_over')
         bird.draw(screen)
         pipe_group.draw(screen)
 
