@@ -26,7 +26,7 @@ class Bird(pygame.sprite.Sprite):
         self.jump_sound = pygame.mixer.Sound(ASSETS['sounds']['jump'])
 
     def update(self, game_active):
-        # First animate the bird
+        # Animate the bird first
         self._animate()
         # Then apply physics and rotation only if the game is active
         if game_active:
@@ -51,10 +51,32 @@ class Bird(pygame.sprite.Sprite):
         self.image = pygame.transform.rotozoom(self.images[self.index], -self.velocity * 3, 1)
 
     def _animate(self):
-        """Cycles through the bird images to create a flapping animation."""
+        """Cycles to create animation."""
         self.animation_counter += 1
         if self.animation_counter > self.animation_cooldown:
             self.animation_counter = 0
             self.index = (self.index + 1) % len(self.images)
             self.image = self.images[self.index]
+
+# Responsible: Anastasiya Trafimovich
+class Pipe(pygame.sprite.Sprite):
+    """
+    Represents a pipe obstacle. For now, it's just a placeholder rectangle.
+    """
+    def __init__(self, x, y, position):
+        super().__init__()
+        # Placeholder rectangle for now
+        self.image = pygame.Surface((70, 400))
+        self.image.fill((0, 200, 0))
+        self.rect = self.image.get_rect()
+
+        if position == 1: # Upper pipe
+            self.rect.bottomleft = [x, y - int(PIPE_GAP / 2)]
+        if position == -1: # Bottom pipe
+            self.rect.topleft = [x, y + int(PIPE_GAP / 2)]
+
+    def update(self):
+        self.rect.x -= 6 # Placeholder scroll speed
+        if self.rect.right < 0:
+            self.kill()
 

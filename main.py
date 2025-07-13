@@ -1,18 +1,17 @@
 import pygame
 import sys
+import random # for pipe heights
 from settings import *
-from sprites import Bird
+from sprites import Bird, Pipe
 
 # --- Initialization ---
 pygame.init()
-# Initialize the mixer for sound effects
 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Blappy Fird')
 clock = pygame.time.Clock()
 
 # --- Game State Variables ---
-# For now, the game starts active + we can control the bird
 game_active = True
 
 # --- Asset Loading ---
@@ -21,6 +20,12 @@ bg_surface.fill((40, 40, 60))
 
 # --- Sprites ---
 bird = pygame.sprite.GroupSingle(Bird(100, SCREEN_HEIGHT / 2))
+pipe_group = pygame.sprite.Group() # Create a group for pipes
+
+# --- Timer for Spawning Pipes ---
+SPAWNPIPE = pygame.USEREVENT
+pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
+pipe_height = [350, 450, 550, 600]
 
 # --- The Game Loop ---
 while True:
@@ -28,19 +33,25 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        # Check for keyboard input
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and game_active:
                 bird.sprite.jump()
+        # Check for the pipe spawn event
+        if event.type == SPAWNPIPE and game_active:
+            pipe_y = random.choice(pipe_height)
+            bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1)
+            top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1)
+            pipe_group.add(bottom_pipe, top_pipe)
 
     # --- Drawing and Updates ---
     screen.blit(bg_surface, (0, 0))
 
-    # Update and draw the bird if the game is active
     if game_active:
-        # Pass the game_active state to the bird's update method
         bird.update(game_active)
+        pipe_group.update()
         bird.draw(screen)
+        pipe_group.draw(screen)
 
     pygame.display.update()
     clock.tick(FPS)
+

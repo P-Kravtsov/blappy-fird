@@ -6,9 +6,11 @@ SCREEN_HEIGHT = 936
 FPS = 60
 GRAVITY = 0.75
 JUMP_STRENGTH = -12
+PIPE_GAP = 300
+PIPE_FREQUENCY = 1500 # milliseconds
 
 # --- Asset Paths & Configs ---
-# A dictionary for assets
+# A dictionary for our assets to make life easier
 ASSETS = {
     'bird': [
         'assets/bird1.png',
@@ -19,4 +21,5 @@ ASSETS = {
         'jump': 'assets/wing.wav',
     }
 }
+
 
