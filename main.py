@@ -17,6 +17,13 @@ def check_collision(pipes):
         return False
     return True
 
+def reset_game():
+    pipe_group.empty()
+    bird.sprite.rect.center = (100, SCREEN_HEIGHT / 2)
+    bird.sprite.velocity = 0
+    return True
+
+
 # --- Initialization ---
 pygame.init()
 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
@@ -30,7 +37,7 @@ game_active = True
 # --- Asset Loading ---
 bg_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 bg_surface.fill((40, 40, 60))
-death_sound = pygame.mixer.Sound(ASSETS['sounds']['hit']) # Load death sound
+death_sound = pygame.mixer.Sound(ASSETS['sounds']['hit'])
 
 # --- Sprites ---
 bird = pygame.sprite.GroupSingle(Bird(100, SCREEN_HEIGHT / 2))
@@ -48,8 +55,13 @@ while True:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and game_active:
-                bird.sprite.jump()
+            if event.key == pygame.K_SPACE:
+                if game_active:
+                    bird.sprite.jump()
+                else:
+                    # Restart the game
+                    game_active = reset_game()
+
         if event.type == SPAWNPIPE and game_active:
             pipe_y = random.choice(pipe_height)
             bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1)
@@ -73,3 +85,4 @@ while True:
 
     pygame.display.update()
     clock.tick(FPS)
+
