@@ -1,3 +1,4 @@
+# main.py
 import pygame
 import sys
 import random
@@ -51,7 +52,7 @@ def update_score(current_score, high_score_val):
 
 
 def score_display(game_state):
-    """Displays the current score the final score and high score."""
+    """Displays the current score or the final score and high score."""
     if game_state == 'main_game':
         score_surface = game_font.render(str(score), True, (255, 255, 255))
         score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
@@ -60,6 +61,7 @@ def score_display(game_state):
         score_surface = game_font.render(f'Score: {score}', True, (255, 255, 255))
         score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
         screen.blit(score_surface, score_rect)
+
         high_score_surface = game_font.render(f'High score: {high_score}', True, (255, 255, 255))
         high_score_rect = high_score_surface.get_rect(center=(SCREEN_WIDTH / 2, 200))
         screen.blit(high_score_surface, high_score_rect)
@@ -110,18 +112,20 @@ while True:
                     bird.sprite.jump()
                 else:
                     game_active, score = reset_game()
-                    # On restart, choose a new theme
+                    # On restart - choose a new theme
                     current_theme_name = random.choice(list(ASSETS['themes'].keys()))
                     current_theme = ASSETS['themes'][current_theme_name]
                     bg_surface = pygame.transform.scale2x(pygame.image.load(current_theme['background']).convert())
                     floor_surface = pygame.transform.scale2x(pygame.image.load(current_theme['ground']).convert())
+                    # FIX: Reload the pipe image
+                    pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).convert_alpha())
 
-        if event.type == SPAWNPIPE and game_active:
-            pipe_y = random.choice(pipe_height)
-            # Pass the themed pipe image to the constructor
-            bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
-            top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
-            pipe_group.add(bottom_pipe, top_pipe)
+            if event.type == SPAWNPIPE and game_active:
+                pipe_y = random.choice(pipe_height)
+                # Pass the themed pipe image to the constructor
+                bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
+                top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
+                pipe_group.add(bottom_pipe, top_pipe)
 
     # --- Drawing and Updates ---
     screen.blit(bg_surface, (0, 0))
@@ -136,12 +140,10 @@ while True:
 
         # Scoring logic
         if pipe_group:
-            # Check the first pipe in the group
             first_pipe = pipe_group.sprites()[0]
             if not first_pipe.passed and first_pipe.rect.centerx < bird.sprite.rect.centerx:
                 score += 1
                 score_sound.play()
-                # Mark both top and bottom pipes as passed
                 for p in pipe_group.sprites():
                     if p.rect.centerx == first_pipe.rect.centerx: p.passed = True
 
