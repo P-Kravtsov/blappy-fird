@@ -1,37 +1,12 @@
-# main.py
 import pygame
 import sys
 import random
 from settings import *
 from sprites import Bird, Pipe, Coin
-from messages import *
+from messages import * # ADDED: Import messages
 
 
 # --- Game Functions ---
-
-# NEW FUNCTION: draw_text_wrapped
-def draw_text_wrapped(surface, text, font, color, rect):
-    """Draws text and wraps it to fit inside the given rectangle."""
-    words = text.split(' ')
-    lines = []
-    current_line = ""
-    for word in words:
-        test_line = current_line + word + " "
-        if font.size(test_line)[0] < rect.width:
-            current_line = test_line
-        else:
-            lines.append(current_line)
-            current_line = word + " "
-    lines.append(current_line)
-
-    y_offset = 0
-    for line in lines:
-        line_surface = font.render(line.strip(), True, color)
-        line_rect = line_surface.get_rect(centerx=rect.centerx, top=rect.top + y_offset)
-        surface.blit(line_surface, line_rect)
-        y_offset += font.get_linesize()
-
-
 def draw_floor():
     """Draws two floor surfaces to create a scrolling effect."""
     screen.blit(floor_surface, (floor_x_pos, 768))
@@ -50,24 +25,19 @@ def check_collision(pipes):
         return False
     return True
 
-
 def reset_game():
     """Resets the game to its initial state."""
     pipe_group.empty()
     coin_group.empty()
     bird.sprite.rect.center = (100, SCREEN_HEIGHT / 2)
     bird.sprite.velocity = 0
-    return True, 0
-
+    return 0, 0 # Return (score, coin_score)
 
 def load_high_score():
     """Loads the high score from a file."""
     try:
-        with open(HIGHSCORE_FILE, 'r') as f:
-            return int(f.read())
-    except (FileNotFoundError, ValueError):
-        return 0
-
+        with open(HIGHSCORE_FILE, 'r') as f: return int(f.read())
+    except (FileNotFoundError, ValueError): return 0
 
 def update_score(current_score, high_score_val):
     """Updates the high score if the current score is higher."""
@@ -77,10 +47,17 @@ def update_score(current_score, high_score_val):
     return high_score_val
 
 
-# MODIFIED FUNCTION: score_display
 def score_display(game_state):
     """Displays the current score or the final score and high score."""
+    # icon score - coins (while active)
     if game_state == 'main_game':
+        screen.blit(coin_icon, (15, 15))
+        coin_score_surface = game_font.render(str(coin_score), True, (255, 255, 255))
+        coin_score_rect = coin_score_surface.get_rect(topleft=(75, 25))
+        screen.blit(coin_score_surface, coin_score_rect)
+
+    if game_state == 'main_game':
+        # main pipes score
         score_surface = game_font.render(str(score), True, (255, 255, 255))
         score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
         screen.blit(score_surface, score_rect)
@@ -91,12 +68,10 @@ def score_display(game_state):
         high_score_surface = game_font.render(f'High score: {high_score}', True, (255, 255, 255))
         high_score_rect = high_score_surface.get_rect(center=(SCREEN_WIDTH / 2, 200))
         screen.blit(high_score_surface, high_score_rect)
-
-        # MODIFIED: Use the new text wrapping function
-        message_area = pygame.Rect(0, 0, SCREEN_WIDTH - 100, 200)
-        message_area.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50)
-        draw_text_wrapped(screen, death_message, game_font_small, (255, 255, 255), message_area)
-
+        # ADDED: Display the death message
+        message_surface = game_font_small.render(death_message, True, (255, 255, 255))
+        message_rect = message_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50))
+        screen.blit(message_surface, message_rect)
 
 # --- Initialization ---
 pygame.init()
@@ -105,11 +80,12 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Blappy Fird')
 clock = pygame.time.Clock()
 game_font = pygame.font.Font(FONT_PATH, 70)
-game_font_small = pygame.font.Font(FONT_PATH, 30)
+game_font_small = pygame.font.Font(FONT_PATH, 30) # ADDED: Smaller font for messages
 
 # --- Game State Variables ---
-game_active = True
+game_active = False
 score = 0
+coin_score = 0 # Новый счетчик для монет
 high_score = load_high_score()
 floor_x_pos = 0
 death_message = ""
@@ -124,6 +100,7 @@ pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).c
 death_sound = pygame.mixer.Sound(ASSETS['sounds']['hit'])
 score_sound = pygame.mixer.Sound(ASSETS['sounds']['score'])
 coin_sound = pygame.mixer.Sound(ASSETS['sounds']['coin'])
+coin_icon = pygame.transform.scale(pygame.image.load(ASSETS['coin']).convert_alpha(), (50, 50))
 
 # --- Sprites ---
 bird = pygame.sprite.GroupSingle(Bird(100, SCREEN_HEIGHT / 2))
@@ -146,23 +123,33 @@ while True:
                 if game_active:
                     bird.sprite.jump()
                 else:
-                    # MODIFIED: Reset death message on restart
-                    game_active, score = reset_game()
-                    death_message = ""  # MODIFIED: Reset the message on restart
+                    game_active = True
+                    score, coin_score = reset_game()  # Присваиваем оба значения
+                    death_message = "" # Reset death message on restart
+                    # Reload theme assets on restart
+                    current_theme_name = random.choice(list(ASSETS['themes'].keys()))
+                    current_theme = ASSETS['themes'][current_theme_name]
+                    bg_surface = pygame.transform.scale2x(pygame.image.load(current_theme['background']).convert())
+                    floor_surface = pygame.transform.scale2x(pygame.image.load(current_theme['ground']).convert())
+                    pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).convert_alpha())
 
+        # --- spawn oioes and coins logic ---
         if event.type == SPAWNPIPE and game_active:
             pipe_y = random.choice(pipe_height)
-            # Pass the themed pipe image to the constructor
             bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
             top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
             pipe_group.add(bottom_pipe, top_pipe)
-            # Add a coin in the middle of the pipes
-            coin_group.add(Coin(SCREEN_WIDTH + 50, pipe_y))
+
+            # Монета появляется с шансом 50% в случайном месте по вертикали
+            if random.randint(1, 2) == 1:
+                coin_y = random.randint(200, 700)
+                coin_group.add(Coin(SCREEN_WIDTH + 100, coin_y))
 
     # --- Drawing and Updates ---
     screen.blit(bg_surface, (0, 0))
 
     if game_active:
+        # --- ACTIVE GAME LOGIC ---
         bird.update(game_active)
         pipe_group.update()
         coin_group.update()
@@ -171,16 +158,13 @@ while True:
         coin_group.draw(screen)
         game_active = check_collision(pipe_group)
 
-        # Scoring logic
-        if pipe_group:
-            # Check the first pipe in the group
-            first_pipe = pipe_group.sprites()[0]
-            if not first_pipe.passed and first_pipe.rect.centerx < bird.sprite.rect.centerx:
-                score += 1
+        # SCORING LOGIC (Corrected)
+        # We only check the bottom pipes to avoid double counting.
+        for pipe in pipe_group:
+            if pipe.is_bottom and not pipe.passed and pipe.rect.centerx < bird.sprite.rect.centerx:
+                pipe.passed = True
+                score += 1 # +1 к основному счету за трубы
                 score_sound.play()
-                # Mark both top and bottom pipes as passed
-                for p in pipe_group.sprites():
-                    if p.rect.centerx == first_pipe.rect.centerx: p.passed = True
 
         # Coin collision logic
         if pygame.sprite.spritecollide(bird.sprite, coin_group, True):
@@ -188,20 +172,29 @@ while True:
             coin_sound.play()
 
         score_display('main_game')
-    else:
-        # Pick a random message, but only once per game over
-        if not death_message:
-            death_message = random.choice(DEATH_MESSAGES)
-        high_score = update_score(score, high_score)
-        score_display('game_over')
-        bird.update(game_active)
-        bird.draw(screen)
-        pipe_group.draw(screen)
-        coin_group.draw(screen)
 
-    # Animate the floor
+    else:  # --- GAME OVER / START SCREEN LOGIC ---
+        high_score = update_score(score, high_score)
+
+        if score == 0: # Start screen
+            title_surface = game_font.render("Blappy Fird", True, (255, 255, 255))
+            title_rect = title_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100))
+            screen.blit(title_surface, title_rect)
+            start_surface = game_font_small.render("Press SPACE to start", True, (255, 255, 255))
+            start_rect = start_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+            screen.blit(start_surface, start_rect)
+        else: # Game over screen
+            if not death_message: # Set death message only once per game over
+                death_message = random.choice(DEATH_MESSAGES)
+            score_display('game_over')
+
+        # Draw static bird on game over/start screen
+        bird.draw(screen)
+
+    # --- Floor Animation (runs in all states) ---
     floor_x_pos -= SCROLL_SPEED
-    if floor_x_pos <= -SCREEN_WIDTH: floor_x_pos = 0
+    if floor_x_pos <= -SCREEN_WIDTH:
+        floor_x_pos = 0
     draw_floor()
 
     pygame.display.update()
