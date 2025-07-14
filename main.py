@@ -168,7 +168,7 @@ while True:
 
         # Coin collision logic
         if pygame.sprite.spritecollide(bird.sprite, coin_group, True):
-            score += 1
+            coin_score += 1
             coin_sound.play()
 
         score_display('main_game')
