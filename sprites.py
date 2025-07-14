@@ -1,11 +1,13 @@
+# sprites.py
 import pygame
+import random
 from settings import *
 
 # Responsible: Pavel Kravtsov
 class Bird(pygame.sprite.Sprite):
     """
     Represents the player's bird.
-    Handles image loading, rect creation, gravity, jumping, animation, and rotation.
+    Handles animation, physics (gravity and jumping), and rotation.
     """
     def __init__(self, x, y):
         super().__init__()
@@ -32,7 +34,6 @@ class Bird(pygame.sprite.Sprite):
             self._apply_gravity()
             self._rotate()
         else:
-            # On game over, show a static, rotated bird
             self.image = pygame.transform.rotozoom(self.images[self.index], -90, 1)
 
     def jump(self):
@@ -51,19 +52,18 @@ class Bird(pygame.sprite.Sprite):
         self.image = pygame.transform.rotozoom(self.images[self.index], -self.velocity * 3, 1)
 
     def _animate(self):
-        """Cycles through the bird images to create a flapping animation."""
+        """Cycles to create animation."""
         self.animation_counter += 1
         if self.animation_counter > self.animation_cooldown:
             self.animation_counter = 0
             self.index = (self.index + 1) % len(self.images)
             self.image = self.images[self.index]
 
-#Anastasiya Trafimovich
+# Responsible: Anastasiya Trafimovich
 class Pipe(pygame.sprite.Sprite):
-    # MODIFICATION: The constructor now accepts a pre-loaded pipe_image
     def __init__(self, x, y, position, pipe_image):
         super().__init__()
-        self.image = pipe_image # Use the image passed from main.py
+        self.image = pipe_image
         self.rect = self.image.get_rect()
         self.passed = False
 
@@ -72,6 +72,18 @@ class Pipe(pygame.sprite.Sprite):
             self.rect.bottomleft = [x, y - int(PIPE_GAP / 2)]
         if position == -1: # Bottom pipe
             self.rect.topleft = [x, y + int(PIPE_GAP / 2)]
+
+    def update(self):
+        self.rect.x -= SCROLL_SPEED
+        if self.rect.right < 0:
+            self.kill()
+
+# NEW CLASS: Coin
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.transform.scale2x(pygame.image.load(ASSETS['coin']).convert_alpha())
+        self.rect = self.image.get_rect(center=(x, y))
 
     def update(self):
         self.rect.x -= SCROLL_SPEED

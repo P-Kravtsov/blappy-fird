@@ -3,7 +3,7 @@ import pygame
 import sys
 import random
 from settings import *
-from sprites import Bird, Pipe
+from sprites import Bird, Pipe, Coin # Import Coin
 
 
 # --- Game Functions ---
@@ -25,12 +25,15 @@ def check_collision(pipes):
         return False
     return True
 
+
 def reset_game():
     """Resets the game to its initial state."""
     pipe_group.empty()
+    coin_group.empty() # Clear coins on restart
     bird.sprite.rect.center = (100, SCREEN_HEIGHT / 2)
     bird.sprite.velocity = 0
     return True, 0
+
 
 def load_high_score():
     """Loads the high score from a file."""
@@ -56,9 +59,11 @@ def score_display(game_state):
         score_surface = game_font.render(f'Score: {score}', True, (255, 255, 255))
         score_rect = score_surface.get_rect(center=(SCREEN_WIDTH / 2, 100))
         screen.blit(score_surface, score_rect)
+
         high_score_surface = game_font.render(f'High score: {high_score}', True, (255, 255, 255))
         high_score_rect = high_score_surface.get_rect(center=(SCREEN_WIDTH / 2, 200))
         screen.blit(high_score_surface, high_score_rect)
+
 
 # --- Initialization ---
 pygame.init()
@@ -83,10 +88,12 @@ pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).c
 
 death_sound = pygame.mixer.Sound(ASSETS['sounds']['hit'])
 score_sound = pygame.mixer.Sound(ASSETS['sounds']['score'])
+coin_sound = pygame.mixer.Sound(ASSETS['sounds']['coin']) # Load coin sound
 
 # --- Sprites ---
 bird = pygame.sprite.GroupSingle(Bird(100, SCREEN_HEIGHT / 2))
 pipe_group = pygame.sprite.Group()
+coin_group = pygame.sprite.Group() # New group for coins
 
 # --- Timer for Spawning Pipes ---
 SPAWNPIPE = pygame.USEREVENT
@@ -105,19 +112,21 @@ while True:
                     bird.sprite.jump()
                 else:
                     game_active, score = reset_game()
-                    # On restart, choose a new theme
+                    # On restart - choose a new theme
                     current_theme_name = random.choice(list(ASSETS['themes'].keys()))
                     current_theme = ASSETS['themes'][current_theme_name]
                     bg_surface = pygame.transform.scale2x(pygame.image.load(current_theme['background']).convert())
                     floor_surface = pygame.transform.scale2x(pygame.image.load(current_theme['ground']).convert())
+                    # FIX: Reload the pipe image
                     pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).convert_alpha())
 
         if event.type == SPAWNPIPE and game_active:
             pipe_y = random.choice(pipe_height)
-            # Pass the themed pipe image to the constructor
             bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
             top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
             pipe_group.add(bottom_pipe, top_pipe)
+            # Add a coin in the middle of the pipes
+            coin_group.add(Coin(SCREEN_WIDTH + 50, pipe_y))
 
     # --- Drawing and Updates ---
     screen.blit(bg_surface, (0, 0))
@@ -125,19 +134,18 @@ while True:
     if game_active:
         bird.update(game_active)
         pipe_group.update()
+        coin_group.update() # Update coins
         bird.draw(screen)
         pipe_group.draw(screen)
-        # Check for collisions and update game state
+        coin_group.draw(screen) # Draw coins
         game_active = check_collision(pipe_group)
 
         # Scoring logic
         if pipe_group:
-            # Check the first pipe in the group
             first_pipe = pipe_group.sprites()[0]
             if not first_pipe.passed and first_pipe.rect.centerx < bird.sprite.rect.centerx:
                 score += 1
                 score_sound.play()
-                # Mark both top and bottom pipes as passed
                 for p in pipe_group.sprites():
                     if p.rect.centerx == first_pipe.rect.centerx: p.passed = True
 
@@ -148,6 +156,7 @@ while True:
         bird.update(game_active)
         bird.draw(screen)
         pipe_group.draw(screen)
+        coin_group.draw(screen) # Also draw coins on game over screen
 
     # Animate the floor
     floor_x_pos -= SCROLL_SPEED

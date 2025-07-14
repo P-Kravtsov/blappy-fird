@@ -1,3 +1,5 @@
+# settings.py
+
 # Screen dimensions
 SCREEN_WIDTH = 864
 SCREEN_HEIGHT = 936
@@ -8,10 +10,10 @@ GRAVITY = 0.75
 JUMP_STRENGTH = -12
 PIPE_GAP = 300
 PIPE_FREQUENCY = 1500 # milliseconds
-SCROLL_SPEED = 6 # Speed for the moving ground
+SCROLL_SPEED = 6
 
 # --- Asset Paths & Configs ---
-FONT_PATH = 'assets/04B_19.TTF'
+FONT_PATH = 'freesansbold.ttf'
 HIGHSCORE_FILE = 'highscore.txt'
 
 # A dictionary for our assets to make life easier
@@ -21,11 +23,7 @@ ASSETS = {
         'assets/bird2.png',
         'assets/bird3.png'
     ],
-    'sounds': {
-        'jump': 'assets/wing.wav',
-        'hit': 'assets/hit.wav',
-        'score': 'assets/point.wav',
-    },
+    'coin': 'assets/coin.png', # ADDED
     'themes': {
         'day': {
             'background': 'assets/bg.png',
@@ -37,5 +35,11 @@ ASSETS = {
             'pipe': 'assets/pipe-night.png',
             'ground': 'assets/ground-night.png'
         }
+    },
+    'sounds': {
+        'jump': 'assets/wing.wav',
+        'score': 'assets/point.wav',
+        'hit': 'assets/hit.wav',
+        'coin': 'assets/coin.wav' # ADDED
     }
 }
