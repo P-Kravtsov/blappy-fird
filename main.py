@@ -112,6 +112,10 @@ SPAWNPIPE = pygame.USEREVENT
 pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
 pipe_height = [350, 450, 550, 600]
 
+# --- Timer for Spawning Coins (NEW) ---
+SPAWNCOIN = pygame.USEREVENT + 1
+pygame.time.set_timer(SPAWNCOIN, random.randint(1000, 3000)) # Spawn every 1-3 seconds
+
 # --- The Game Loop ---
 while True:
     for event in pygame.event.get():
@@ -140,10 +144,27 @@ while True:
             top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
             pipe_group.add(bottom_pipe, top_pipe)
 
-            # 50% chance to spawn a coin vertically aligned with the bottom pipe
-            if random.randint(1, 2) == 1:
-                coin_y = random.randint(200, 700)
-                coin_group.add(Coin(SCREEN_WIDTH + 100, coin_y))
+        if event.type == SPAWNCOIN and game_active:
+            # Create a temporary coin to check for collisions
+            temp_coin = Coin(SCREEN_WIDTH + 50, 0)
+
+            # Find a safe Y position for the coin
+            is_safe = False
+            while not is_safe:
+                # Choose a random Y position
+                coin_y = random.randint(100, SCREEN_HEIGHT - 200)
+                temp_coin.rect.center = (SCREEN_WIDTH + 50, coin_y)
+
+                # Check if this position collides with any pipe
+                if not pygame.sprite.spritecollide(temp_coin, pipe_group, False):
+                    is_safe = True
+
+            # Add the coin with the safe position to the group
+            coin_group.add(Coin(SCREEN_WIDTH + 50, coin_y))
+
+            # Reset the timer with a new random interval
+            pygame.time.set_timer(SPAWNCOIN, random.randint(1000, 3000))
+
 
     # --- Drawing and Updates ---
     screen.blit(bg_surface, (0, 0))
