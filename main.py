@@ -133,14 +133,14 @@ while True:
                     floor_surface = pygame.transform.scale2x(pygame.image.load(current_theme['ground']).convert())
                     pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).convert_alpha())
 
-        # --- spawn oioes and coins logic ---
+        # --- spawn pipes and coins logic ---
         if event.type == SPAWNPIPE and game_active:
             pipe_y = random.choice(pipe_height)
             bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
             top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
             pipe_group.add(bottom_pipe, top_pipe)
 
-            # Монета появляется с шансом 50% в случайном месте по вертикали
+            # 50% chance to spawn a coin vertically aligned with the bottom pipe
             if random.randint(1, 2) == 1:
                 coin_y = random.randint(200, 700)
                 coin_group.add(Coin(SCREEN_WIDTH + 100, coin_y))
@@ -156,6 +156,12 @@ while True:
         bird.draw(screen)
         pipe_group.draw(screen)
         coin_group.draw(screen)
+
+        # --- Floor Animation (runs in all states) ---
+        floor_x_pos -= SCROLL_SPEED
+        if floor_x_pos <= -SCREEN_WIDTH:
+            floor_x_pos = 0
+
         game_active = check_collision(pipe_group)
 
         # SCORING LOGIC (Corrected)
@@ -191,10 +197,6 @@ while True:
         # Draw static bird on game over/start screen
         bird.draw(screen)
 
-    # --- Floor Animation (runs in all states) ---
-    floor_x_pos -= SCROLL_SPEED
-    if floor_x_pos <= -SCREEN_WIDTH:
-        floor_x_pos = 0
     draw_floor()
 
     pygame.display.update()
