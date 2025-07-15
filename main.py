@@ -84,6 +84,7 @@ game_font_small = pygame.font.Font(FONT_PATH, 30) # ADDED: Smaller font for mess
 
 # --- Game State Variables ---
 game_active = False
+game_paused = False # ADDED: Pause state
 score = 0
 coin_score = 0 # Новый счетчик для монет
 high_score = load_high_score()
@@ -136,15 +137,17 @@ while True:
                     bg_surface = pygame.transform.scale2x(pygame.image.load(current_theme['background']).convert())
                     floor_surface = pygame.transform.scale2x(pygame.image.load(current_theme['ground']).convert())
                     pipe_image = pygame.transform.scale2x(pygame.image.load(current_theme['pipe']).convert_alpha())
+            elif event.key == pygame.K_p and game_active: # ADDED: Pause toggle
+                game_paused = not game_paused
 
         # --- spawn pipes and coins logic ---
-        if event.type == SPAWNPIPE and game_active:
+        if event.type == SPAWNPIPE and game_active and not game_paused:
             pipe_y = random.choice(pipe_height)
             bottom_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, -1, pipe_image)
             top_pipe = Pipe(SCREEN_WIDTH + 50, pipe_y, 1, pipe_image)
             pipe_group.add(bottom_pipe, top_pipe)
 
-        if event.type == SPAWNCOIN and game_active:
+        if event.type == SPAWNCOIN and game_active and not game_paused:
             # Create a temporary coin to check for collisions
             temp_coin = Coin(SCREEN_WIDTH + 50, 0)
 
@@ -170,33 +173,42 @@ while True:
     screen.blit(bg_surface, (0, 0))
 
     if game_active:
-        # --- ACTIVE GAME LOGIC ---
-        bird.update(game_active)
-        pipe_group.update()
-        coin_group.update()
+        # --- Game objects are drawn regardless of pause state ---
         bird.draw(screen)
         pipe_group.draw(screen)
         coin_group.draw(screen)
 
-        # --- Floor Animation (runs in all states) ---
-        floor_x_pos -= SCROLL_SPEED
-        if floor_x_pos <= -SCREEN_WIDTH:
-            floor_x_pos = 0
+        if not game_paused:
+            # --- ACTIVE GAME LOGIC (runs only when not paused) ---
+            bird.update(game_active)
+            pipe_group.update()
+            coin_group.update()
 
-        game_active = check_collision(pipe_group)
+            # --- Floor Animation ---
+            floor_x_pos -= SCROLL_SPEED
+            if floor_x_pos <= -SCREEN_WIDTH:
+                floor_x_pos = 0
 
-        # SCORING LOGIC (Corrected)
-        # We only check the bottom pipes to avoid double counting.
-        for pipe in pipe_group:
-            if pipe.is_bottom and not pipe.passed and pipe.rect.centerx < bird.sprite.rect.centerx:
-                pipe.passed = True
-                score += 1 # +1 к основному счету за трубы
-                score_sound.play()
+            game_active = check_collision(pipe_group)
 
-        # Coin collision logic
-        if pygame.sprite.spritecollide(bird.sprite, coin_group, True):
-            coin_score += 1
-            coin_sound.play()
+            # SCORING LOGIC (Corrected)
+            # We only check the bottom pipes to avoid double counting.
+            for pipe in pipe_group:
+                if pipe.is_bottom and not pipe.passed and pipe.rect.centerx < bird.sprite.rect.centerx:
+                    pipe.passed = True
+                    score += 1 # +1 к основному счету за трубы
+                    score_sound.play()
+
+            # Coin collision logic
+            if pygame.sprite.spritecollide(bird.sprite, coin_group, True):
+                coin_score += 1
+                coin_sound.play()
+        else:
+            # --- PAUSED SCREEN LOGIC ---
+            # Draw "PAUSED" text
+            pause_surface = game_font.render("PAUSED", True, (255, 255, 255))
+            pause_rect = pause_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+            screen.blit(pause_surface, pause_rect)
 
         score_display('main_game')
 
@@ -210,6 +222,10 @@ while True:
             start_surface = game_font_small.render("Press SPACE to start", True, (255, 255, 255))
             start_rect = start_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
             screen.blit(start_surface, start_rect)
+            # ADDED: Pause hint on start screen
+            pause_hint_surface = game_font_small.render("Press 'P' to pause", True, (200, 200, 200))
+            pause_hint_rect = pause_hint_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 40))
+            screen.blit(pause_hint_surface, pause_hint_rect)
         else: # Game over screen
             if not death_message: # Set death message only once per game over
                 death_message = random.choice(DEATH_MESSAGES)
